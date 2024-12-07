@@ -1,0 +1,232 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Login - Study Group Finder</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Arial', sans-serif;
+            background: linear-gradient(to bottom, #e6f2ff, #ffffff);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            padding: 20px;
+        }
+
+        .login-container {
+            background-color: #ffffff;
+            border-radius: 8px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            padding: 40px;
+            width: 100%;
+            max-width: 400px;
+        }
+
+        .logo {
+            text-align: center;
+            margin-bottom: 20px;
+        }
+
+        .logo svg {
+            width: 60px;
+            height: 60px;
+            fill: #4a90e2;
+        }
+
+        h1 {
+            color: #333;
+            font-size: 24px;
+            text-align: center;
+            margin-bottom: 10px;
+        }
+
+        .subtitle {
+            color: #666;
+            font-size: 14px;
+            text-align: center;
+            margin-bottom: 30px;
+        }
+
+        .input-group {
+            margin-bottom: 20px;
+        }
+
+        label {
+            display: block;
+            margin-bottom: 5px;
+            color: #333;
+            font-size: 14px;
+        }
+
+        input {
+            width: 100%;
+            padding: 10px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            font-size: 14px;
+        }
+
+        input:focus {
+            outline: none;
+            border-color: #4a90e2;
+        }
+
+        .validation-message {
+            color: #e74c3c;
+            font-size: 12px;
+            margin-top: 5px;
+        }
+
+        .btn {
+            width: 100%;
+            padding: 12px;
+            background-color: #4a90e2;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 16px;
+            transition: background-color 0.3s;
+        }
+
+        .btn:hover {
+            background-color: #357abd;
+        }
+
+        .error-message {
+            background-color: #fde8e8;
+            border: 1px solid #f5c6cb;
+            color: #721c24;
+            padding: 10px;
+            border-radius: 4px;
+            font-size: 14px;
+            margin-top: 20px;
+            text-align: center;
+        }
+
+        .signup-link {
+            text-align: center;
+            margin-top: 20px;
+            font-size: 14px;
+            color: #666;
+        }
+
+        .signup-link a {
+            color: #4a90e2;
+            text-decoration: none;
+        }
+
+        .signup-link a:hover {
+            text-decoration: underline;
+        }
+    </style>
+</head>
+<body>
+    <div class="login-container">
+        <div class="logo">
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z"></path>
+                <path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"></path>
+            </svg>
+        </div>
+        <h1>Welcome Back</h1>
+        <p class="subtitle">Sign in to your Study Group Finder account</p>
+        <form id="login-form">
+            <div class="input-group">
+                <label for="email">Email</label>
+                <input type="email" id="email" placeholder="Enter your email" required>
+                <div id="email-error" class="validation-message"></div>
+            </div>
+            <div class="input-group">
+                <label for="password">Password</label>
+                <input type="password" id="password" placeholder="Enter your password" required>
+                <div id="password-error" class="validation-message"></div>
+            </div>
+            <button type="submit" class="btn">Sign In</button>
+        </form>
+        <div id="error-message" class="error-message" style="display: none;"></div>
+        <p class="signup-link">Don't have an account? <a href="/register.html">Sign up</a></p>
+    </div>
+
+    <script>
+        const loginForm = document.getElementById('login-form');
+        const errorMessage = document.getElementById('error-message');
+        const emailField = document.getElementById('email');
+        const passwordField = document.getElementById('password');
+        const emailError = document.getElementById('email-error');
+        const passwordError = document.getElementById('password-error');
+
+        function validateEmail(email) {
+            const emailPattern = /^[a-zA-Z0-9._-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,6}$/;
+            return emailPattern.test(email);
+        }
+
+        function validatePassword(password) {
+            return password.trim().length >= 6;
+        }
+
+        loginForm.addEventListener('submit', async (e) => {
+            e.preventDefault();
+
+            emailError.textContent = '';
+            passwordError.textContent = '';
+            errorMessage.style.display = 'none';
+            errorMessage.textContent = '';
+
+            const email = emailField.value;
+            const password = passwordField.value;
+
+            let isValid = true;
+
+            if (!validateEmail(email)) {
+                emailError.textContent = 'Please enter a valid email address.';
+                isValid = false;
+            }
+
+            if (!validatePassword(password)) {
+                passwordError.textContent = 'Password must be at least 6 characters long.';
+                isValid = false;
+            }
+
+            if (!isValid) {
+                return;
+            }
+
+            const loginData = { email, password };
+            console.log('Sending login data:', loginData);
+
+            try {
+                const response = await fetch('https://localhost:7034/api/auth/login', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(loginData)
+                });
+
+                if (response.ok) {
+                    const result = await response.json();
+                    console.log('Login success:', result);
+                    alert("Login successful");
+                    window.location.href = '/dashboard';
+                } else {
+                    const error = await response.json();
+                    console.log('Login failed:', error);
+                    errorMessage.textContent = error.message || "Invalid login credentials";
+                    errorMessage.style.display = 'block';
+                }
+            } catch (error) {
+                console.log('Error connecting to the server:', error);
+                errorMessage.textContent = "Error connecting to the server";
+                errorMessage.style.display = 'block';
+            }
+        });
+    </script>
+</body>
+</html>
