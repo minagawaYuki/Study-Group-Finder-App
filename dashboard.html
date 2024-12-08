@@ -145,7 +145,7 @@
             </svg>
             <span>Home</span>
         </a>
-        <a href="/dashboard.html" class="sidebar-item">
+        <a href="/profile.html" class="sidebar-item">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                 <circle cx="12" cy="8" r="4"/><path d="M12 12v8"/><line x1="8" y1="16" x2="16" y2="16"/>
             </svg>
@@ -184,6 +184,8 @@
     </main>
 
     <script>
+        let groups = [];
+
         async function fetchStudyGroups() {
             const token = localStorage.getItem('token');
             if (!token) {
@@ -202,7 +204,8 @@
                     throw new Error('Failed to fetch groups');
                 }
 
-                const groups = await response.json();
+                // allGroups = await response.json();
+                groups = await response.json();
                 renderGroups(groups);
             } catch (error) {
                 console.error('Error:', error);
@@ -212,6 +215,11 @@
         function renderGroups(groups) {
             const container = document.getElementById('groups-container');
             container.innerHTML = '';
+
+            if (groups.length === 0) {
+                container.innerHTML = `<p>No groups match your search criteria.</p>`;
+                return;
+            }
 
             groups.forEach(group => {
                 const card = document.createElement('div');
@@ -226,6 +234,15 @@
                 `;
                 container.appendChild(card);
             });
+        }
+
+        function filterGroups(query) {
+            const filteredGroups = groups.filter(group =>
+                group.Name.toLowerCase().includes(query.toLowerCase()) ||
+                group.CourseCode.toLowerCase().includes(query.toLowerCase()) ||
+                group.Description.toLowerCase().includes(query.toLowerCase())
+            );
+            renderGroups(filteredGroups);
         }
 
         function viewGroupDetails(groupId) {
@@ -258,6 +275,11 @@
                 alert('Failed to join group');
             }
         }
+
+        document.querySelector('.search-bar').addEventListener('input', (event) => {
+            const searchQuery = event.target.value;
+            filterGroups(searchQuery);
+        });
 
         // Load groups when page loads
         fetchStudyGroups();
