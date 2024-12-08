@@ -163,58 +163,61 @@
         const passwordField = document.getElementById('password');
         const emailError = document.getElementById('email-error');
         const passwordError = document.getElementById('password-error');
-
+    
         function validateEmail(email) {
             const emailPattern = /^[a-zA-Z0-9._-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,6}$/;
             return emailPattern.test(email);
         }
-
+    
         function validatePassword(password) {
             return password.trim().length >= 6;
         }
-
+    
         loginForm.addEventListener('submit', async (e) => {
             e.preventDefault();
-
+    
             emailError.textContent = '';
             passwordError.textContent = '';
             errorMessage.style.display = 'none';
             errorMessage.textContent = '';
-
+    
             const email = emailField.value;
             const password = passwordField.value;
-
+    
             let isValid = true;
-
+    
             if (!validateEmail(email)) {
                 emailError.textContent = 'Please enter a valid email address.';
                 isValid = false;
             }
-
+    
             if (!validatePassword(password)) {
                 passwordError.textContent = 'Password must be at least 6 characters long.';
                 isValid = false;
             }
-
+    
             if (!isValid) {
                 return;
             }
-
+    
             const loginData = { email, password };
-            console.log('Sending login data:', loginData);
-
+    
             try {
                 const response = await fetch('https://localhost:7034/api/auth/login', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify(loginData)
                 });
-
+    
                 if (response.ok) {
                     const result = await response.json();
                     console.log('Login success:', result);
+    
+                    // Store the token in localStorage or cookies
+                    localStorage.setItem('token', result.token);
+    
                     alert("Login successful");
-                    window.location.href = '/dashboard';
+                    window.location.href = '/dashboard.html';
                 } else {
                     const error = await response.json();
                     console.log('Login failed:', error);
@@ -227,6 +230,13 @@
                 errorMessage.style.display = 'block';
             }
         });
+    
+        // Utility function to include the token in requests
+        function getAuthHeader() {
+            const token = localStorage.getItem('token');
+            return token ? { Authorization: `Bearer ${token}` } : {};
+        }
     </script>
+    
 </body>
 </html>
