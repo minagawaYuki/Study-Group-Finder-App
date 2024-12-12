@@ -76,11 +76,19 @@
             box-shadow: var(--shadow);
         }
 
-        h1 {
+        h1, h2 {
             color: var(--primary-color);
-            font-size: 2.5rem;
             margin-bottom: 20px;
+        }
+
+        h1 {
+            font-size: 2.5rem;
             text-align: center;
+        }
+
+        h2 {
+            font-size: 1.8rem;
+            margin-top: 30px;
         }
 
         .group-info {
@@ -142,6 +150,45 @@
             background-color: #bdc3c7;
         }
 
+        #announcement-list {
+            list-style-type: none;
+            padding: 0;
+        }
+
+        .announcement-item {
+            background-color: #f9f9f9;
+            border: 1px solid var(--border-color);
+            border-radius: 4px;
+            padding: 15px;
+            margin-bottom: 15px;
+        }
+
+        .announcement-content {
+            font-size: 1.1rem;
+            margin-bottom: 10px;
+        }
+
+        .announcement-meta {
+            font-size: 0.9rem;
+            color: var(--text-light);
+        }
+
+        #announcement-input {
+            width: 100%;
+            padding: 10px;
+            margin-top: 20px;
+            border: 1px solid var(--border-color);
+            border-radius: 4px;
+            font-size: 1rem;
+            resize: vertical;
+        }
+
+        #error-message {
+            color: #e74c3c;
+            margin-top: 10px;
+            font-weight: 500;
+        }
+
         @media (max-width: 768px) {
             .sidebar {
                 width: 60px;
@@ -166,45 +213,20 @@
             }
         }
     </style>
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Group Details - Study Group Finder</title>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600&display=swap" rel="stylesheet">
+    <style>
+        /* ... Existing styles ... */
+    </style>
 </head>
 <body>
-    <aside class="sidebar">
-        <a href="/dashboard.html" class="sidebar-item">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"></path>
-                <polyline points="9 22 9 12 15 12 15 22"></polyline>
-            </svg>
-            <span>Home</span>
-        </a>
-        <a href="/dashboard.html" class="sidebar-item">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                <circle cx="12" cy="8" r="4"/><path d="M12 12v8"/><line x1="8" y1="16" x2="16" y2="16"/>
-            </svg>
-            Profile
-        </a>
-        <a href="#" class="sidebar-item">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                <circle cx="12" cy="12" r="10"></circle>
-                <path d="M12 16v-4"></path>
-                <path d="M12 8h.01"></path>
-            </svg>
-            <span>My Groups</span>
-        </a>
-        <a href="/study_groups.html" class="sidebar-item">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                <path d="M12 5v14M5 12h14"></path>
-            </svg>
-            <span>Join Group</span>
-        </a>
-        <a href="/create_group.html" class="sidebar-item">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                <path d="M12 20h9"></path>
-                <path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"></path>
-            </svg>
-            <span>Create Group</span>
-        </a>
-    </aside>
-
+    <!-- Sidebar and Other Sections (remain the same) -->
+    
     <main class="main-content">
         <div class="container">
             <h1 id="group-name"></h1>
@@ -215,7 +237,19 @@
                 <p><strong>Created By:</strong> <span id="group-creator"></span></p>
                 <p><strong>Member Count:</strong> <span id="group-members"></span></p>
             </div>
-            <div class="btn-container"> 
+            <div id="announcements">
+                <h2>Announcements</h2>
+                <ul id="announcement-list">
+                    <!-- Announcements will be populated here -->
+                </ul>
+            </div>
+            <div id="announcement-section">
+                
+                <textarea id="announcement-input" placeholder="Write an announcement..." rows="3"></textarea>
+                <button id="post-announcement-btn" class="btn btn-primary" style="margin-top: 10px;">Post Announcement</button>
+                <p id="error-message" style="display: none;"></p>
+            </div>
+            <div class="btn-container">
                 <button class="btn btn-secondary" onclick="goBack()">Back</button>
                 <button id="joinLeaveBtn" class="btn btn-primary" onclick="toggleMembership()">Join Group</button>
             </div>
@@ -227,15 +261,16 @@
         const urlParams = new URLSearchParams(queryString);
         const groupId = urlParams.get('groupId');
         let isMember = false;
-    
+        let token = localStorage.getItem('token');
+        let isOwner = false;  // To track if the logged-in user is the group owner
+
         async function fetchGroupDetails() {
-            const token = localStorage.getItem('token');
             if (!token) {
                 alert("You need to log in first.");
                 window.location.href = '/login.html';
                 return;
             }
-    
+
             try {
                 const response = await fetch(`https://localhost:7034/api/studygroup/details/${groupId}`, {
                     method: 'GET',
@@ -244,7 +279,7 @@
                         'Authorization': `Bearer ${token}`
                     }
                 });
-    
+
                 if (response.ok) {
                     const group = await response.json();
                     document.getElementById('group-name').textContent = group.Name;
@@ -253,9 +288,19 @@
                     document.getElementById('group-course').textContent = group.CourseCode;
                     document.getElementById('group-creator').textContent = group.CreatedByEmail || "No email";
                     document.getElementById('group-members').textContent = group.MemberCount;
-    
-                    // Check membership status
+
+                    // Get the logged-in user's email from the token
+                    const loggedInUserEmail = getLoggedInUserEmail(token);
+
+                    // Check if the logged-in user's email matches the group's creator email
+                    isOwner = group.CreatedByEmail === loggedInUserEmail;
+
+                    // Hide the announcement input and button if the user is not the owner
+                    document.getElementById('announcement-section').style.display = isOwner ? 'block' : 'none';
+
+                    await fetchAnnouncements();
                     await checkMembership();
+                    document.getElementById('announcements').style.display = isMember ? 'block' : 'none';
                     updateJoinLeaveButton();
                 } else {
                     alert("Failed to load group details.");
@@ -266,9 +311,93 @@
                 alert("Error connecting to the server.");
             }
         }
-    
+
+        // Helper function to decode the JWT and get the logged-in user's email
+        function getLoggedInUserEmail(token) {
+            if (!token) return null;
+            const payload = JSON.parse(atob(token.split('.')[1]));
+            return payload.email;  // 'email' claim contains the user's email
+        }
+
+        async function fetchAnnouncements() {
+            try {
+                console.log(`Fetching announcements for groupId: ${groupId}`);
+                const response = await fetch(`https://localhost:7034/api/studygroup/${groupId}/announcements`, {
+                    method: 'GET',
+                    headers: {
+                        'Authorization': `Bearer ${token}`,
+                        'Content-Type': 'application/json'
+                    }
+                });
+
+                if (response.ok) {
+                    const announcements = await response.json();
+                    console.log("Announcements fetched:", announcements);
+
+                    const announcementList = document.getElementById('announcement-list');
+                    announcementList.innerHTML = ''; // Clear previous entries
+
+                    if (announcements.length === 0) {
+                        announcementList.innerHTML = '<li>No announcements available for this group.</li>';
+                    } else {
+                        announcements.forEach(announcement => {
+                            const li = document.createElement('li');
+                            li.innerHTML = `
+                                <div>
+                                    <p><strong>Content:</strong> ${announcement.Content}</p>
+                                    <p><strong>Created At:</strong> ${new Date(announcement.CreatedAt).toLocaleString()}</p>
+                                    <p><strong>Created By:</strong> ${announcement.CreatedBy || "Unknown"}</p>
+                                </div>
+                            `;
+                            announcementList.appendChild(li);
+                        });
+                    }
+                } else {
+                    console.error(`Failed to fetch announcements. Status: ${response.status}`);
+                    document.getElementById('announcement-list').innerHTML = `<li>Failed to load announcements. (${response.status})</li>`;
+                }
+            } catch (error) {
+                console.error("Error fetching announcements:", error);
+                document.getElementById('announcement-list').innerHTML = `<li>Error connecting to the server.</li>`;
+            }
+        }
+
+        document.getElementById('post-announcement-btn').addEventListener('click', async () => {
+            const content = document.getElementById('announcement-input').value;
+            const errorMessage = document.getElementById('error-message');
+
+            if (!content.trim()) {
+                errorMessage.textContent = "Announcement content cannot be empty.";
+                errorMessage.style.display = 'block';
+                return;
+            }
+
+            try {
+                const response = await fetch(`https://localhost:7034/api/studygroup/${groupId}/announcements`, {
+                    method: 'POST',
+                    headers: {
+                        'Authorization': `Bearer ${token}`,
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({ content })
+                });
+
+                if (response.ok) {
+                    document.getElementById('announcement-input').value = '';
+                    errorMessage.style.display = 'none';
+                    await fetchAnnouncements();
+                } else {
+                    errorMessage.textContent = "Failed to post announcement.";
+                    errorMessage.style.display = 'block';
+                }
+            } catch (error) {
+                console.error("Error posting announcement:", error);
+                errorMessage.textContent = "Error connecting to the server.";
+                errorMessage.style.display = 'block';
+            }
+        });
+
         async function checkMembership() {
-            const token = localStorage.getItem('token');
             try {
                 const response = await fetch(`https://localhost:7034/api/studygroup/IsUserMember/${groupId}`, {
                     method: 'GET',
@@ -277,7 +406,7 @@
                         'Accept': 'application/json'
                     }
                 });
-    
+
                 if (response.ok) {
                     isMember = await response.json();
                 } else {
@@ -288,53 +417,47 @@
                 console.error("Error checking membership status:", error);
                 isMember = false;
             }
+            console.log(isMember)
         }
-    
-        async function toggleMembership() {
-            const token = localStorage.getItem('token');
-            const url = isMember 
-                ? `https://localhost:7034/api/StudyGroup/leave/${groupId}`
-                : `https://localhost:7034/api/StudyGroup/join/${groupId}`;
-            const method = 'POST';
-    
-            try {
-                const response = await fetch(url, {
-                    method: method,
-                    headers: {
-                        'Authorization': `Bearer ${token}`,
-                        'Content-Type': 'application/json'
-                    },
-                    body: JSON.stringify({ groupId })
-                });
-    
-                if (response.ok) {
-                    isMember = !isMember;
-                    updateJoinLeaveButton();
-                    alert(isMember ? 'You have joined the group!' : 'You have left the group!');
-                } else {
-                    alert("Action failed. Please try again.");
-                }
-            } catch (error) {
-                console.error("Error toggling membership:", error);
-                alert("Error connecting to the server.");
-            }
-        }
-    
+
         function updateJoinLeaveButton() {
             const button = document.getElementById('joinLeaveBtn');
             button.textContent = isMember ? 'Leave Group' : 'Join Group';
             button.classList.toggle('btn-primary', !isMember);
             button.classList.toggle('btn-danger', isMember);
         }
-    
+
+        async function toggleMembership() {
+            const action = isMember ? 'leave' : 'join';
+            try {
+                const response = await fetch(`https://localhost:7034/api/studygroup/${action}/${groupId}`, {
+                    method: 'POST',
+                    headers: {
+                        'Authorization': `Bearer ${token}`,
+                        'Content-Type': 'application/json'
+                    }
+                });
+
+                if (response.ok) {
+                    isMember = !isMember;
+                    updateJoinLeaveButton();
+                    await fetchGroupDetails(); // Refresh group details
+                    alert(isMember ? "You have joined the group." : "You have left the group.");
+                } else {
+                    alert(`Failed to ${action} the group.`);
+                }
+            } catch (error) {
+                console.error(`Error ${action} the group:`, error);
+                alert(`Error ${action} the group.`);
+            }
+        }
+
         function goBack() {
             window.history.back();
         }
-    
-        // Fetch group details on page load
+
+        // Initial fetch of group details
         fetchGroupDetails();
     </script>
-    
-    
 </body>
 </html>
