@@ -146,6 +146,22 @@
         <p class="subtitle">Join Study Group Finder and start collaborating</p>
         <form id="register-form">
             <div class="input-group">
+                <label for="first-name">First Name</label>
+                <input type="text" id="first-name" placeholder="Enter your first name" required>
+            </div>
+            <div class="input-group">
+                <label for="last-name">Last Name</label>
+                <input type="text" id="last-name" placeholder="Enter your last name" required>
+            </div>
+            <div class="input-group">
+                <label for="year-level">Year Level</label>
+                <input type="text" id="year-level" placeholder="Enter your year level" required>
+            </div>
+            <div class="input-group">
+                <label for="course">Course</label>
+                <input type="text" id="course" placeholder="Enter your course" required>
+            </div>
+            <div class="input-group">
                 <label for="email">Email</label>
                 <input type="email" id="email" placeholder="Enter your email" required>
             </div>
@@ -187,9 +203,18 @@
                 return;
             }
 
+            const firstName = document.getElementById('first-name').value;
+            const lastName = document.getElementById('last-name').value;
+            const yearLevel = document.getElementById('year-level').value;
+            const course = document.getElementById('course').value;
+
             const registerData = {
                 email: email,
-                password: password
+                password: password,
+                firstName: firstName,
+                lastName: lastName,
+                yearLevel: yearLevel,
+                course: course
             };
 
             console.log('Sending register data:', registerData);
