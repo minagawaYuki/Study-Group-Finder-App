@@ -517,12 +517,29 @@
                                 <span>${new Date(announcement.CreatedAt).toLocaleString()}</span>
                             </div>
                             <div class="announcement-content">${announcement.Content}</div>
+                            ${isOwner ? `
+                                <div class="announcement-actions">
+                                    <button class="edit-announcement" onclick="editAnnouncement(${announcement.Id})">Edit</button>
+                                    <button class="delete-announcement" onclick="deleteAnnouncement(${announcement.Id})">Delete</button>
+                                </div>
+                                <form class="edit-announcement-form" id="edit-form-${announcement.Id}">
+                                    <textarea>${announcement.Content}</textarea>
+                                    <button type="submit" class="btn btn-primary">Update Announcement</button>
+                                </form>
+                            ` : ''}
                             <ul class="comments-list"></ul>
                             <textarea class="comment-input" placeholder="Add a comment..."></textarea>
                             <button class="btn btn-primary post-comment" data-announcement-id="${announcement.Id}">Post Comment</button>
                         `;
                         announcementList.appendChild(li);
-
+                        
+                        if (isOwner) {
+                            document.getElementById(`edit-form-${announcement.Id}`).addEventListener('submit', (e) => {
+                                e.preventDefault();
+                                updateAnnouncement(announcement.Id, e.target.querySelector('textarea').value);
+                            });
+                        }
+                        
                         const commentsList = li.querySelector('.comments-list');
                         announcement.Comments.forEach(comment => {
                             const commentTemplate = document.getElementById('comment-template');
