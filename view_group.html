@@ -189,6 +189,76 @@
             box-shadow: 0 0 0 2px rgba(230, 92, 44, 0.1);
         }
 
+        .announcement-actions {
+            display: flex;
+            justify-content: flex-end;
+            gap: 10px;
+            margin-top: 10px;
+        }
+
+        .announcement-actions button {
+            padding: 5px 10px;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 0.9rem;
+            transition: background-color 0.3s ease;
+        }
+
+        .edit-announcement {
+            background-color: #3498db;
+            color: white;
+        }
+
+        .edit-announcement:hover {
+            background-color: #2980b9;
+        }
+
+        .delete-announcement {
+            background-color: #e74c3c;
+            color: white;
+        }
+
+        .delete-announcement:hover {
+            background-color: #c0392b;
+        }
+
+        .edit-announcement-form {
+            display: none;
+            margin-top: 10px;
+        }
+
+        .edit-announcement-form textarea {
+            width: 100%;
+            padding: 10px;
+            border: 1px solid var(--border-color);
+            border-radius: 4px;
+            resize: vertical;
+            min-height: 100px;
+        }
+
+        .edit-announcement-form button {
+            margin-top: 10px;
+        }
+
+        .edit-form {
+            display: none;
+            margin-top: 20px;
+        }
+
+        .edit-form input, .edit-form textarea {
+            width: 100%;
+            padding: 10px;
+            margin-bottom: 10px;
+            border: 1px solid var(--border-color);
+            border-radius: 4px;
+        }
+
+        .edit-form textarea {
+            resize: vertical;
+            min-height: 100px;
+        }
+
         @media (max-width: 768px) {
             .sidebar {
                 width: 60px;
@@ -258,6 +328,14 @@
                 <p><strong>Created By:</strong> <span id="group-creator"></span></p>
                 <p><strong>Member Count:</strong> <span id="group-members"></span></p>
             </div>
+            <button id="editBtn" class="btn btn-secondary" style="display: none;">Edit Group Details</button>
+            <form id="editForm" class="edit-form">
+                <input type="text" id="editName" placeholder="Group Name" required>
+                <textarea id="editDescription" placeholder="Group Description" required></textarea>
+                <input type="text" id="editSubject" placeholder="Subject" required>
+                <input type="text" id="editCourseCode" placeholder="Course Code" required>
+                <button type="submit" class="btn btn-primary">Update Group</button>
+            </form>
             <ul id="announcement-list"></ul>
             <textarea id="announcement-input" placeholder="Enter your announcement here..."></textarea>
             <button id="btnPost" class="btn btn-primary" onclick="postAnnouncement()">Post Announcement</button>
@@ -273,7 +351,7 @@
         const urlParams = new URLSearchParams(queryString);
         const groupId = urlParams.get('groupId');
         let token = localStorage.getItem('token');
-        let isOwner = false;  // To track if the logged-in user is the group owner
+        let isOwner = false;
         let isMember = false;
     
         async function fetchGroupDetails() {
@@ -298,20 +376,21 @@
                     document.getElementById('group-course').textContent = group.CourseCode;
                     document.getElementById('group-creator').textContent = group.CreatedByEmail || "No email";
                     document.getElementById('group-members').textContent = group.MemberCount;
-                    // Get the logged-in user's email from the token
                     const loggedInUserEmail = getLoggedInUserEmail(token);
-                    // Check if the logged-in user's email matches the group's creator email
                     isOwner = group.CreatedByEmail === loggedInUserEmail;
-                    // Hide the announcement input and button if the user is not the owner
                     document.getElementById('announcement-input').style.display = isOwner ? 'block' : 'none';
                     document.getElementById('btnPost').style.display = isOwner ? 'block' : 'none';
+                    document.getElementById('editBtn').style.display = isOwner ? 'block' : 'none';
+                    if (isOwner) {
+                        document.getElementById('editName').value = group.Name;
+                        document.getElementById('editDescription').value = group.Description;
+                        document.getElementById('editSubject').value = group.Subject;
+                        document.getElementById('editCourseCode').value = group.CourseCode;
+                    }
                     await fetchAnnouncements();
                     await checkMembership();
                     document.getElementById('announcement-list').style.display = isMember ? 'block' : 'none';
                     updateJoinLeaveButton();
-                    console.log(group)
-                    console.log("Created by:", group.CreatedBy)
-                    console.log("Logged in: ", loggedInUserEmail)
                 } else {
                     alert("Failed to load group details.");
                     window.location.href = "/dashboard.html"
@@ -322,11 +401,10 @@
             }
         }
 
-        // Helper function to decode the JWT and get the logged-in user's email
         function getLoggedInUserEmail(token) {
             if (!token) return null;
             const payload = JSON.parse(atob(token.split('.')[1]));
-            return payload.email;  // 'email' claim contains the user's email
+            return payload.email;
         }
 
         async function checkMembership() {
@@ -348,7 +426,6 @@
                 console.error("Error checking membership status:", error);
                 isMember = false;
             }
-            console.log(isMember)
         }
     
         function updateJoinLeaveButton() {
@@ -372,7 +449,6 @@
                 return;
             }
 
-            // Determine the HTTP method and endpoint based on membership status
             const method = isMember ? 'DELETE' : 'POST';
             const endpoint = `https://localhost:7034/api/studygroup/group/members/${groupId}`;
 
@@ -386,11 +462,10 @@
                 });
 
                 if (response.ok) {
-                    // Toggle membership status
                     isMember = !isMember;
                     updateJoinLeaveButton();
                     alert(isMember ? "You successfully joined the group!" : "You have left the group.");
-                    await fetchGroupDetails(); // Refresh the group details
+                    await fetchGroupDetails();
                 } else {
                     const error = await response.json();
                     alert(error.message || `Failed to ${isMember ? 'leave' : 'join'} the group.`);
@@ -409,7 +484,7 @@
                 return;
             }
             const announcementList = document.getElementById('announcement-list');
-            announcementList.innerHTML = ''; // Clear existing announcements
+            announcementList.innerHTML = '';
 
             try {
                 const response = await fetch(`https://localhost:7034/api/studygroup/${groupId}/announcements/`, {
@@ -422,7 +497,6 @@
 
                 if (response.ok) {
                     const announcements = await response.json();
-                    console.log(announcements)
                     announcements.forEach(announcement => {
                         const li = document.createElement('li');
                         li.className = 'announcement-item';
@@ -432,8 +506,25 @@
                                 <span>${new Date(announcement.CreatedAt).toLocaleString()}</span>
                             </div>
                             <div class="announcement-content">${announcement.Content}</div>
+                            ${isOwner ? `
+                                <div class="announcement-actions">
+                                    <button class="edit-announcement" onclick="editAnnouncement(${announcement.Id})">Edit</button>
+                                    <button class="delete-announcement" onclick="deleteAnnouncement(${announcement.Id})">Delete</button>
+                                </div>
+                                <form class="edit-announcement-form" id="edit-form-${announcement.Id}">
+                                    <textarea>${announcement.Content}</textarea>
+                                    <button type="submit" class="btn btn-primary">Update Announcement</button>
+                                </form>
+                            ` : ''}
                         `;
                         announcementList.appendChild(li);
+
+                        if (isOwner) {
+                            document.getElementById(`edit-form-${announcement.Id}`).addEventListener('submit', (e) => {
+                                e.preventDefault();
+                                updateAnnouncement(announcement.Id, e.target.querySelector('textarea').value);
+                            });
+                        }
                     });
                 } else {
                     alert("Failed to load announcements.");
@@ -441,6 +532,60 @@
             } catch (error) {
                 console.error("Error fetching announcements:", error);
                 alert("Error connecting to the server.");
+            }
+        }
+
+        function editAnnouncement(announcementId) {
+            const form = document.getElementById(`edit-form-${announcementId}`);
+            form.style.display = form.style.display === 'none' ? 'block' : 'none';
+        }
+
+        async function updateAnnouncement(announcementId, newContent) {
+            try {
+                const response = await fetch(`https://localhost:7034/api/StudyGroup/announcements/${announcementId}`, {
+                    method: 'PUT',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${token}`
+                    },
+                    body: JSON.stringify({ Content: newContent })
+                });
+
+                if (response.ok) {
+                    alert('Announcement updated successfully!');
+                    fetchAnnouncements();
+                } else {
+                    const error = await response.json();
+                    console.log(announcementId)
+                    alert(error.message || 'Failed to update announcement.');
+                }
+            } catch (error) {
+                console.error('Error updating announcement:', error);
+                alert('Error connecting to the server.');
+            }
+        }
+
+        async function deleteAnnouncement(announcementId) {
+            if (confirm('Are you sure you want to delete this announcement?')) {
+                try {
+                    const response = await fetch(`https://localhost:7034/api/StudyGroup/announcements/${announcementId}`, {
+                        method: 'DELETE',
+                        headers: {
+                            'Authorization': `Bearer ${token}`
+                        }
+                    });
+
+                    if (response.ok) {
+                        alert('Announcement deleted successfully!');
+                        fetchAnnouncements();
+                    } else {
+                        const error = await response.json();
+                        alert(error.message || 'Failed to delete announcement.');
+                    }
+                } catch (error) {
+                    console.error('Error deleting announcement:', error);
+                    alert('Error connecting to the server.');
+                }
             }
         }
 
@@ -484,8 +629,44 @@
         function goBack() {
             window.history.back();
         }
-    
-        // Fetch group details when the page loads
+
+        document.getElementById('editBtn').addEventListener('click', function() {
+            document.getElementById('editForm').style.display = 'block';
+        });
+
+        document.getElementById('editForm').addEventListener('submit', async function(e) {
+            e.preventDefault();
+            const updatedGroup = {
+                Name: document.getElementById('editName').value,
+                Description: document.getElementById('editDescription').value,
+                Subject: document.getElementById('editSubject').value,
+                CourseCode: document.getElementById('editCourseCode').value
+            };
+
+            try {
+                const response = await fetch(`https://localhost:7034/api/StudyGroup/${groupId}`, {
+                    method: 'PUT',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${token}`
+                    },
+                    body: JSON.stringify(updatedGroup)
+                });
+
+                if (response.ok) {
+                    alert('Group details updated successfully!');
+                    fetchGroupDetails();
+                    document.getElementById('editForm').style.display = 'none';
+                } else {
+                    const error = await response.json();
+                    alert(error.message || 'Failed to update group details.');
+                }
+            } catch (error) {
+                console.error('Error updating group details:', error);
+                alert('Error connecting to the server.');
+            }
+        });
+
         fetchGroupDetails();
     </script>
 </body>
