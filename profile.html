@@ -197,16 +197,18 @@
     <div class="container">
         <aside class="sidebar_profile">
             <img src="#" class="profile-image">
-            <h2 id="profile-name">Mark Adrian Baring</h2>
-            <p id="profile-occupation">Student</p>
+            <h2 id="profile-name"></h2>
+            <p id="year-level"></p>
+            <p id="course"></p>
             <div class="about">
-                <p id="profile-description">I am a shy and hardworking student. I would like to learn more about programming because it is fun.</p>
+                <p id="profile-description"></p>
             </div>
             <button id="edit-profile-button" class="action">Edit Profile</button>
             <div id="edit-profile-form" class="edit-section" style="display: none;">
-                <input type="text" id="edit-name" placeholder="Name" value="Mark Adrian Baring">
-                <input type="text" id="edit-occupation" placeholder="Occupation" value="Student">
-                <textarea id="edit-description" placeholder="Description">I am a shy and hardworking student. I would like to learn more about programming because it is fun.</textarea>
+                <input type="text" id="edit-name" placeholder="Name" value="">
+                <input type="text" id="edit-year-level" placeholder="Year Level" value="">
+                <input type="text" id="edit-course" placeholder="Course" value="">
+                <textarea id="edit-description" placeholder="Description"></textarea>
                 <button id="save-profile-button">Save</button>
             </div>
         </aside>
@@ -218,40 +220,54 @@
 
         // Fetch existing profile data
         async function fetchProfile() {
-            try {
-                const response = await fetch('/api/profile/get-profile', {
-                    headers: { 'Authorization': `Bearer ${localStorage.getItem('token')}` }
-                });
-                if (response.ok) {
-                    const data = await response.json();
-                    document.getElementById("profile-name").textContent = data.FullName || "";
-                    document.getElementById("profile-occupation").textContent = data.Occupation || "";
-                    document.getElementById("profile-description").textContent = data.Description || "";
-                    document.getElementById("edit-name").value = data.FullName || "";
-                    document.getElementById("edit-occupation").value = data.Occupation || "";
-                    document.getElementById("edit-description").value = data.Description || "";
-                } else {
-                    console.error("Failed to fetch profile data.");
-                }
-            } catch (error) {
+        try {
+            const token = localStorage.getItem('token'); 
+
+            if (!token) {
+                console.error("Token is missing. User might not be logged in.");
+                return; // Exit function if token is not found
+            }
+
+            const response = await fetch('https://localhost:7034/api/profile/get-profile', {
+                headers: { 'Authorization': `Bearer ${token}` }
+            });
+
+            if (response.ok) {
+                const data = await response.json();
+                console.log(data);
+                document.getElementById("profile-name").textContent = data.FullName || "";
+                document.getElementById("year-level").textContent = data.YearLevel || "";
+                document.getElementById("course").textContent = data.Course || "";
+                document.getElementById("profile-description").textContent = data.Description || "";
+
+                document.getElementById("edit-name").value = data.FullName || "";
+                document.getElementById("edit-year-level").value = data.YearLevel || "";
+                document.getElementById("edit-course").value = data.Course || "";
+                document.getElementById("edit-description").value = data.Description || "";
+            } else {
+                console.error("Failed to fetch profile data.");
+            }
+        } catch (error) {
                 console.error("Error:", error);
             }
         }
 
+
         // Save updated profile
         async function saveProfile() {
             const fullName = document.getElementById("edit-name").value;
-            const occupation = document.getElementById("edit-occupation").value;
+            const yearLevel = document.getElementById("edit-year-level").value;
+            const course = document.getElementById("edit-course").value;
             const description = document.getElementById("edit-description").value;
 
             try {
-                const response = await fetch('/api/profile/update-profile', {
+                const response = await fetch('https://localhost:7034/api/profile/update-profile', {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json',
                         'Authorization': `Bearer ${localStorage.getItem('token')}`
                     },
-                    body: JSON.stringify({ FullName: fullName, Occupation: occupation, Description: description })
+                    body: JSON.stringify({ FirstName: fullName.split(" ")[0], LastName: fullName.split(" ").slice(1).join(" "), YearLevel: yearLevel, Course: course, Description: description })
                 });
                 if (response.ok) {
                     alert("Profile updated successfully!");
